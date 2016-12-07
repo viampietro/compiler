@@ -1,0 +1,23 @@
+;; associe au symbole name 3 tableaux (code, data-stack, control-stack)
+;; et 3 pseudos registres CO, SP et FP.
+(defun make-vm (name code-size data-stack-size control-stack-size)
+  (progn
+    (setf (name :code) (make-array code-size))
+    (setf (name :data-stack) (make-array data-stack-size))
+    (setf (name :control-stack) (make-array control-stack-size))
+    (setf (name :CO) 0)
+    (setf (name :SP) 0)
+    (setf (name :FP) 0)
+    name))
+
+;; renvoie le tableau correspondant au code charge
+;; dans la vm
+(defun get-code (vm)
+  (get vm :code))
+
+;; renvoie l'instruction contenu dans la pile de code
+;; a l'adresse addr
+(defun read-code (vm addr)
+  (aref (get-code vm) addr))
+
+  
