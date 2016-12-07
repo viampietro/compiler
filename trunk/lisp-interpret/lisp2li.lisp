@@ -7,10 +7,10 @@
       (if (constantp expr) 
 	  (cons :LIT expr)
 	;; cas des variables, id commence a 1
-	(let ((pos (+ (position expr env) 1))) 
-	  (if pos
-	      (cons :VAR pos)
-	    (warn "La variable ~s n'existe pas" expr))))
+	 
+	  (if (position expr env)
+	      (cons :VAR (+ (position expr env) 1))
+	    (warn "La variable ~s n'existe pas" expr)))
     ;; expr n'est pas un atome ;;
     (let ((fun (first expr)) (args (rest expr)))
       (cond
@@ -48,14 +48,12 @@
 	(case fun
 	      (defun 
 		  (if (eq 'let (car (third args)))
-		      (let ((lsetf (let2setf (cadr (third args))))
-			    (nb-lvars (length (car lsetf)))
-			    (defun-body `(progn ,@(cadr lsetf) ,(third args))))
+		      (let ((lsetf (let2setf (cadr (third args)))))
 			`(:CALL set-defun (:LIT . ,(first args))
 				(:LIT :LAMBDA
 				      ,(length (second args)) ;; nombre d'args
-				      ,(+ 1 (length (second args)) nb-lvars)
-				      ,(lisp2li defun-body))))))
+				      ,(+ 1 (length (second args)) (length (car lsetf))) ;; nombre d'args + nb lvars + 1
+				      ,(lisp2li `(progn ,@(cadr lsetf) ,(caddr (third args))) `(,@(second args) . ,(car lsetf))))))))
 	      
 	      (setf `(:SET-VAR ,(cdr (lisp2li (car args) env)) ,(lisp2li (cadr args) env)))
 	      (t (lisp2li (macroexpand-1 expr) env))))

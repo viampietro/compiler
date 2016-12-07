@@ -6,14 +6,16 @@
     (ecase (car expr)
 	   (:LIT (cdr expr))
 	   (:VAR (aref env (cdr expr)))
-	   (:SET-VAR (error "NYI :SET-VAR"))
+	   (:SET-VAR (setf (aref env (cadr expr)) (eval-li (caddr expr) env)))
 	   (:IF (if (eval-li (second expr) env)
 		    (eval-li (third expr) env)
 		  (eval-li (fourth expr) env)))
 	   (:CALL (apply (symbol-function (second expr)) (map-eval-li (cddr expr) env)))
 	   (:MCALL (let ((fun (get-defun (second expr))))
 		     (eval-li (fourth fun)
-			      (make-eval-li-env (map-eval-li (cddr expr) env) (second fun)))))
+			      (make-eval-li-env
+			       (map-eval-li (cddr expr) env) (third fun)
+			       (- (third fun) (second fun) 1)))))
 	   (:PROGN (map-eval-li-progn (cdr expr) env))
 	   (:UNKNOWN (let ((nexpr (lisp2li (second expr) (third expr))))
 		       (if (eq (car nexpr) :UNKNOWN)
@@ -29,8 +31,9 @@
 
 ;; Prend une liste d'expressions evaluees en parametre et un taille
 ;; de tableau pour remplir un tableau nouvellement creer avec lexpr.
-(defun make-eval-li-env (lexpr array-size)
-  (make-array array-size :initial-contents (cons nil lexpr)))
+(defun make-eval-li-env (lexpr array-size nb-lvars)
+    (make-array array-size
+		:initial-contents `(nil ,@lexpr ,@(make-list nb-lvars))))
 
 ;; Prend une liste d'expressions LI en argument, evalue chaque expression
 ;; et retourne le resultat de la derniere expression evaluee.
