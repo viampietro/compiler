@@ -1,6 +1,7 @@
 (require "../lisp-interpret/lisp2li.lisp")
 (require "../lisp-interpret/eval-li.lisp")
 (require "./li2vm.lisp")
+(require "./vm.lisp")
 
 (defun check-li2vm (expr-li expr-vm nbparam)
   (let ((expr-vm-res (li2vm expr-li nbparam)))
@@ -46,3 +47,24 @@
 		    (:CALL *)
 		    (:RTN)) 0)))
 
+;; affiche les instructions presentes dans la pile de code
+;; de la vm
+(defun display-code (vm)
+  (loop for instr across (get-code vm)
+	do (if (not (null instr))
+	       (format t "~s~%" instr))))
+
+
+(defun test-load-vm (vm-name)
+  (progn
+    (make-vm vm-name 100 100 100)
+    (load-vm 'ma-vm '((:LABEL square)
+		      (:STACK 0)
+		      (:VAR 1)
+		      (:VAR 1)
+		      (:CONST 2)
+		      (:LABEL loop)
+		      (:STACK 0)
+		      (:VAR 1)
+		      (:VAR 1)
+		      (:CONST 2)))))
