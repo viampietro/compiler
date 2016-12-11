@@ -10,6 +10,10 @@
 		  `(,@(map-li2vm args nbparam) (:CONST ,(length args)) (:CALL ,fun))))
 	 (:MCALL (let ((fun (second expr)) (args (cddr expr)))
 		   `(,@(map-li2vm args nbparam) (:CONST ,(length args)) (:CALL ,fun))))
+	 (:UNKNOWN (let ((nexpr (lisp2li (second expr) (third expr))))
+		     (if (eq (car nexpr) :UNKNOWN)
+			 (error "UNKNOWN ~s" (cdr expr))
+		       (li2vm (displace expr nexpr) (length (third expr))))))
 	 (:IF (let ((bloc-alors (li2vm (third expr) nbparam)))
 		`(,@(li2vm (second expr) nbparam)
 		  (:SKIPNIL ,(length bloc-alors))
@@ -19,11 +23,13 @@
 
 (defun fun2vm (fun)
   (let ((fun-value (get-defun fun)))
+    (if (null fun-value)
+	(warn "~s n'a pas de valeur fonctionnelle" fun)
     ;; on definit une etiquette pour la fonction
-    `((:LABEL ,fun)
-      (:STACK ,(third fun-value)) ;; nombre de vars locales
-      ,@(li2vm (fourth fun-value) (second fun-value))
-      (:RTN))))
+      `((:LABEL ,fun)
+	(:STACK ,(third fun-value)) ;; nombre de vars locales
+	,@(li2vm (fourth fun-value) (second fun-value))
+	(:RTN)))))
 
 ;; prend une liste d'expressions LI en param
 ;; et retourne cette meme liste traduite en expressions

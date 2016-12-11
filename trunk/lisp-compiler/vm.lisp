@@ -27,13 +27,40 @@
 ;; de la vm (avec transformations sur le code selon les instrs lues)
 (defun load-vm (vm code)
   (let ((co (get-register vm :CO)))
-    (loop for instr in code do
-	  (ecase (car instr)
-		 ((:CONST :VAR :SET-VAR :SKIP :SKIPNIL :STACK)
-		  (progn
-		    (write-code vm co instr)
-		    (setf co (+ co 1))))
-		 (:LABEL (load-label (cadr instr) co vm))))))
+    (progn
+      (loop for instr in code do
+	    (ecase (car instr)
+		   ((:CONST :VAR :SET-VAR :SKIP :SKIPNIL :STACK :RTN)
+		    (progn
+		      (write-code vm co instr)
+		      (setf co (+ co 1))))
+		   (:LABEL (load-label (cadr instr) co vm))
+		   (:CALL (progn
+			    (if (not (fboundp (cadr instr)))
+				(load-call instr co vm))
+			    (write-code vm co instr)
+			    (setf co (+ co 1))))))
+      ;; conserve la postion du compteur ordinal a la fin du chargement
+      ;; pour pouvoir loader du code en plusieurs appels
+      (setf (get vm :CO) co))))
+
+;; prend en arguments une instruction (instr) de type (:CALL label),
+;; l'adresse (addr) de cette instruction et la vm associee (vm).
+;; Remplace le label par l'adresse du label (dans l'instruction :CALL) si celui-ci est un symbole connu,
+;; sinon remplit la hash-table des refs en avant en associant le label
+;; avec l'adresse de l'instruction :CALL qu'il faudra resoudre plus tard.
+(defun load-call (instr addr vm)
+  (let ((label-addr (gethash (cadr instr) (get vm :htss)))
+	(label-fr (gethash (cadr instr) (get vm :htfr))))
+    ;; si le label appartient a la hash-table des solved symbols
+    (if (not (null label-addr))
+	(setf (cadr instr) label-addr) ;; on remplace le label par son adresse dans l'instruction
+      ;; si le label est deja associe a des refs en avant
+      (if (not (null label-fr))
+	  ;; on ajoute une nouvelle addr a la liste des refs en avant
+	  ;; (adresse ou se trouve le call en cours de traitement)
+	  (setf (gethash (cadr instr) (get vm :htfr)) `(,@label-fr ,addr))
+	(setf (gethash (cadr instr) (get vm :htfr)) `(,addr))))))
 
 ;; Prend en arguments un label de fonction, l'adresse du label
 ;; dans le code de la vm, et la vm associee.

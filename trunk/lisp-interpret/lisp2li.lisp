@@ -15,7 +15,7 @@
     (let ((fun (first expr)) (args (rest expr)))
       (cond
 
-					; cas ou expr n'est pas un symbole
+       ;; cas ou expr n'est pas un symbole
        ((not (symbolp fun))
 	;; cas des lambdas
 	(if (and (consp fun) (eq 'lambda (first fun))) 
@@ -26,7 +26,7 @@
        ((get-defun fun)
 	`(:MCALL ,fun ,@(map-lisp2li args env))) 
 
-					; si fun n'a pas de valeur fonctionnelle
+       ;; si fun n'a pas de valeur fonctionnelle
        ((not (fboundp fun)) 
 	`(:UNKNOWN ,expr ,env))
 
@@ -46,14 +46,20 @@
        ;; si fun est une macro
        ((macro-function fun) 
 	(case fun
-	      (defun 
-		  (if (eq 'let (car (third args)))
+	      (defun
+		  ;; si la fonction contient des vars locales
+		  (if (eq 'let (car (third args))) 
 		      (let ((lsetf (let2setf (cadr (third args)))))
 			`(:CALL set-defun (:LIT . ,(first args))
 				(:LIT :LAMBDA
 				      ,(length (second args)) ;; nombre d'args
 				      ,(+ 1 (length (second args)) (length (car lsetf))) ;; nombre d'args + nb lvars + 1
-				      ,(lisp2li `(progn ,@(cadr lsetf) ,(caddr (third args))) `(,@(second args) . ,(car lsetf))))))))
+				      ,(lisp2li `(progn ,@(cadr lsetf) ,(caddr (third args))) `(,@(second args) . ,(car lsetf))))))
+		    `(:CALL set-defun (:LIT . ,(first args))
+			    (:LIT :LAMBDA
+				  ,(length (second args)) ;; nombre d'args
+				  ,(+ 1 (length (second args))) ;; nombre d'args + nb lvars + 1
+				  ,(lisp2li (third args) (second args))))))
 	      
 	      (setf `(:SET-VAR ,(cdr (lisp2li (car args) env)) ,(lisp2li (cadr args) env)))
 	      (t (lisp2li (macroexpand-1 expr) env))))
