@@ -15,8 +15,13 @@
 ;; affiche les instructions presentes dans la pile de code
 ;; de la vm
 (defun display-code (vm)
-  (loop for instr across (get-code vm)
-	do (if (not (null instr))
-	       (format t "~s~%" instr))))
+  (loop for i from 0 to ( - (get-register vm :CO) 1)
+	do (format t "~s~%" (read-code vm i))))
+
+(defun display-data-stack (vm)
+  (progn
+    (loop for i from 0 to (- (get-register vm :DSP) 1) 
+	  do (format t "~s " (read-data-stack vm i)))
+    (format t "~%")))
 
 
