@@ -29,7 +29,8 @@
 	(warn "~s n'a pas de valeur fonctionnelle" fun)
     ;; on definit une etiquette pour la fonction
       `((:LABEL ,fun)
-	(:STACK ,(third fun-value)) ;; nombre de vars locales
+	;; nombre de vars locales - nbargs - 1
+	(:STACK . ,(- (third fun-value) (second fun-value) 1))
 	,@(li2vm (fourth fun-value) (second fun-value))
 	(:RTN)))))
 
