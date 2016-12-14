@@ -13,8 +13,8 @@
 	   (:CALL (apply (symbol-function (second expr)) (map-eval-li (cddr expr) env)))
 	   (:MCALL (let ((fun (get-defun (second expr))))
 		     (eval-li (fourth fun)
-			      (make-eval-li-env
-			       (map-eval-li (cddr expr) env) (third fun)
+			      (make-eval-li-env (map-eval-li (cddr expr) env)
+			       (third fun)
 			       (- (third fun) (second fun) 1)))))
 	   (:PROGN (map-eval-li-progn (cdr expr) env))
 	   (:UNKNOWN (let ((nexpr (lisp2li (second expr) (third expr))))

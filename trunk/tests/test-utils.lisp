@@ -24,4 +24,6 @@
 	  do (format t "~s " (read-data-stack vm i)))
     (format t "~%")))
 
+(defun meval (expr)
+  (eval-li (lisp2li expr '()) '#(nil)))
 
