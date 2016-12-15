@@ -24,6 +24,12 @@
 	  do (format t "~s " (read-data-stack vm i)))
     (format t "~%")))
 
+(defun display-control-stack (vm)
+  (progn
+    (loop for i from 0 to (- (get vm :CSP) 1) 
+	  do (format t "~s " (read-control-stack vm i)))
+    (format t "~%")))
+
 (defun meval (expr)
   (eval-li (lisp2li expr '()) '#(nil)))
 

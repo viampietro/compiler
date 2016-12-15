@@ -13,12 +13,29 @@
     (setf (get vm-name :htss) (make-hash-table :test 'equal)) ;; hash table for solved symbols
     vm-name))
 
+(defun reset-vm (vm-name)
+  (progn
+    (setf (get vm-name :code) (make-array (array-total-size (get vm-name :code))))
+    (setf (get vm-name :data-stack) (make-array (array-total-size (get vm-name :data-stack))))
+    (setf (get vm-name :control-stack) (make-array (array-total-size (get vm-name :control-stack))))
+    (setf (get vm-name :CO) 0) ;; compteur ordinal du tableau de code
+    (setf (get vm-name :DSP) 0) ;; pour data stack pointer
+    (setf (get vm-name :FP) 0)  ;; frame pointer de la data-stack
+    (setf (get vm-name :CSP) 0) ;; pour control stack pointer
+    (setf (get vm-name :htfr) (make-hash-table :test 'equal)) ;; hash table for forward references
+    (setf (get vm-name :htss) (make-hash-table :test 'equal)) ;; hash table for solved symbols
+    vm-name))
+
 (defun eval-vm (vm expr)
   (if (equal 'defun (car expr))
       (error "eval-vm ne peut pas s'appliquer sur defun")
     (let ((start-co (get vm :CO)))
       (load-vm vm `(,@(li2vm (lisp2li expr '()) (length (cdr expr))) (:HALT)))
-      (exec-vm vm start-co))))
+      (exec-vm vm start-co)
+      ;; lecture du resultat sur le sommet de la data stack
+      ;; et mise a zero du data stack pointer
+      (set-register vm :CO start-co)
+      (read-data-stack vm (decf (get vm :DSP))))))
 
 ;; prend une vm et la valeur du compteur ordinal
 ;; puis lance l'execution du code de la vm a partir de co.
@@ -26,7 +43,6 @@
   (let ((not-finished t))
     (loop while not-finished do
 	  (let ((instr (read-code vm co)))
-	    (format t "~s~%" instr)
 	    (ecase (car instr)
 		   ;; empile la valeur et incremente le data stack pointer
 		   (:CONST (progn
@@ -38,7 +54,6 @@
 
 		   ;; empile la valeur de la variable lue a l'adresse frame pointer + (numvar - 1)
 		   (:VAR (progn
-			   
 			   (write-data-stack vm (get vm :DSP) (read-data-stack vm (+ (get vm :FP) (- (cdr instr) 1))))
 			   (incf (get vm :DSP))
 			   (incf co)))
@@ -50,16 +65,14 @@
 			       (decf (get vm :DSP))
 			       (incf co)))
 
-		   (:SKIP (setf co (+ (cdr instr) co)))
+		   (:SKIP (setf co (+ (cdr instr) co 1)))
 
 		   ;; si le sommet de la pile est egal a nil on saute le nb d'instructions indique par le cdr
 		   ;; sinon on incremente le co de 1.
 		   ;; On depile quelque soit la valeur du sommet de pile
-		   (:SKIPNIL (progn
-			       (if (null (read-data-stack vm (get vm :DSP)))
-				   (setf co (+ (cdr instr) co))
-				 (incf co))
-			       (decf (get vm :DSP))))
+		   (:SKIPNIL (if (null (read-data-stack vm (decf (get vm :DSP))))
+				 (setf co (+ (cdr instr) co 1))
+			       (incf co)))
 		   
 		   ;; on depile le nb d'arguments dans le let
 		   (:CALL (let ((nbargs (read-data-stack vm (decf (get vm :DSP)))) (args-list nil))
@@ -73,8 +86,9 @@
 					  do (progn
 					       (decf (get vm :DSP))
 					       (setf args-list `(,(read-data-stack vm (get vm :DSP)) ,@args-list))))
-				    (format t "function : ~s, args : ~s~%" (cadr instr) args-list)
-				    (write-data-stack vm (get vm :DSP) (apply (cadr instr) args-list))))
+				    (write-data-stack vm (get vm :DSP) (apply (cadr instr) args-list))
+				    (incf (get vm :DSP))
+				    (incf co)))
 			      ;; sinon :CALL est suivi par une adresse (fonction chargee dans la vm)
 			      (progn
 				;; empiler l'adresse de retour dans la control stack puis empiler la valeur de :FP
@@ -95,22 +109,37 @@
 			     (set-register vm :DSP (+ (get vm :DSP) (cdr instr)))
 			     (incf co)))
 		   
-		   (:RTN (let ((return-value (read-data-stack vm (get :DSP)))) ;; on stocke la valeur de retour dns la var return-value
-
+		   (:RTN (let ((return-value (read-data-stack vm (decf (get vm :DSP))))) ;; on stocke la valeur de retour dns la var return-value
+			   
 			   ;; on place la valeur de du frame pointer dans data-stack pointer
 			   ;; (operation de dechargement du contexte d'appel d'une fonction lors du retour) 
 			   (set-register vm :DSP (get vm :FP))
+			   (write-data-stack vm (get vm :DSP) return-value)
+			   (incf (get vm :DSP))
 
 			   ;; on remet dans le frame pointer son ancienne valeur qui etait stockee
 			   ;; en haut de la pile de controle (retour au contexte de la fonction appelante)
-			   (set-register vm :FP (read-control-stack vm (get :CSP)))
+			   (set-register vm :FP (read-control-stack vm (decf (get vm :CSP))))
 			   (decf (get vm :CSP)) ;; decremente le control stack pointer
 
 			   ;; saute a l'adresse de retour stockee au sommet de la control stack
-			   (setf co (get vm :CSP))
-			   (decf (get vm :CSP)))) ;; decremente le control stack pointer
+			   (setf co (read-control-stack vm (get vm :CSP)))))
 		   
 		   (:HALT (setf not-finished nil)))))))
+
+;; INSTRUCTIONS DE DEBUG
+;; (format t "INSTR n° ~s : ~s~%" co instr)
+;; (format t "DATA STACK : ")
+;; (display-data-stack vm)
+;; (format t "CONTROL STACK : ")
+;; (display-control-stack vm)
+;; (format t "DSP = ~s~%" (get vm :DSP))
+;; (format t "CSP = ~s~%" (get vm :CSP))
+;; (format t "FP = ~s~%" (get vm :FP))
+;; (format t "Enter to continue, Q to quit : ")
+;; (if (equal "Q" (read-line))
+;;     (return nil)
+;;   (format t "-------------------------------~%"))
 
 ;; prend une vm et des instructions en langage vm en arguments
 ;; parcourt chaque instr du code et les charge dans la pile de code
