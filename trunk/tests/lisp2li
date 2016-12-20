@@ -1,0 +1,63 @@
+(defun lisp2li (expr env)
+    (let ((fun nil)
+	(args nil)
+	(lsetf nil))
+    
+    (if (atom expr)
+	(if (constantp expr) 
+	    (cons :LIT expr)
+	  
+	  (if (position expr env)
+	      (cons :VAR (+ (position expr env) 1))
+	    (warn "La variable ~s n'existe pas" expr)))
+      (progn
+	(setf fun (first expr))
+	(setf args (rest expr))
+
+	(cond
+	 ((not (symbolp fun))
+	  (if (and (consp fun) (eq 'lambda (first fun))) 
+	      (warn "NYI ~s" (first fun))
+	    (warn "~s n'est pas une lambda" fun)))
+
+	 ((get-defun fun)
+	  `(:MCALL ,fun ,@(map-lisp2li args env)))
+	  
+	 ((not (fboundp fun)) 
+	  `(:UNKNOWN ,expr ,env))
+
+	 ((macro-function fun) 
+	  (case fun
+		(setf `(:SET-VAR ,(cdr (lisp2li (car args) env)) ,(lisp2li (cadr args) env)))
+		(cond (lisp2li (cond2if args) env))
+		(case (lisp2li (case2if (cdr args) (car args)) env))
+		(defun
+		    (if (eq 'let (car (third args))) 
+			(progn
+			  (setf lsetf (let2setf (cadr (third args))))
+			  `(:CALL set-defun (:LIT . ,(first args))
+				  (:LIT :LAMBDA
+					,(length (second args)) 
+					,(+ 1 (length (second args)) (length (car lsetf)))
+					,(lisp2li `(progn ,@(cadr lsetf) ,(caddr (third args))) `(,@(second args) . ,(car lsetf))))))
+		      `(:CALL set-defun (:LIT . ,(first args))
+			      (:LIT :LAMBDA
+				    ,(length (second args))
+				    ,(+ 1 (length (second args)))
+				    ,(lisp2li (third args) (second args))))))
+		(t (lisp2li (macroexpand-1 expr) env))))
+
+	((special-form-p fun) 
+	  (case fun
+		(quote `(:LIT ,@(first args)))
+		(if `(:IF
+		      ,(lisp2li (first args) env)
+		      ,(lisp2li (second args) env)
+		      ,(lisp2li (third args) env)))
+		(progn (cond ((null args) (list :LIT))
+			     ((null (rest args)) (lisp2li (first args) env))
+			     (t (cons :PROGN (map-lisp2li args env)))))		     	
+		 
+		(t (warn "NYI special form ~s" fun))))
+
+	 (t `(:CALL ,fun ,@(map-lisp2li args env))))))))
