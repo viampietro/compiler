@@ -1,0 +1,2 @@
+(defun meval (expr)
+  (eval-li (lisp2li expr '()) '#(nil)))

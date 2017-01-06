@@ -8,7 +8,7 @@
     (case (car expr)
 	  (:LIT (cdr expr))
 	  (:VAR (aref env (cdr expr)))
-	  (:SET-VAR (setf (aref env (second expr)) (eval-li (third expr) env)))
+	  (:SET-VAR (setf (aref env (cadr expr)) (eval-li (caddr expr) env)))
 	  (:IF (if (eval-li (second expr) env)
 		   (eval-li (third expr) env)
 		 (eval-li (fourth expr) env)))
@@ -20,10 +20,6 @@
 					       (third fun)
 					       (- (third fun) (second fun) 1)))))
 	  (:PROGN (map-eval-li-progn (cdr expr) env))
-	  (:LOOP (if (eval-li (second expr) env)
-		     (progn
-		       (eval-li (third expr) env)
-		       (eval-li expr env))))
 	  (:UNKNOWN (progn
 		      (setf nexpr (lisp2li (second expr) (third expr)))
 		      (if (eq (car nexpr) :UNKNOWN)

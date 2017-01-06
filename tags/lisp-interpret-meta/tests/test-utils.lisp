@@ -31,14 +31,5 @@
     (format t "~%")))
 
 (defun meval (expr)
-  (if (eql (car expr) 'defun)
-      (progn
-	(eval-li (lisp2li expr '()) '#(nil))
-	(second expr))
-    (eval-li (lisp2li expr '()) '#(nil))))
+  (eval-li (lisp2li expr '()) '#(nil)))
 
-(defun meval-interpret ()
-  (progn
-    (meval (load-fun 'lisp2li))
-    (meval (load-fun 'eval-li))
-    (meval (load-fun 'meval))))

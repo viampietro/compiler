@@ -1,0 +1,28 @@
+;; prend une vm et des instructions en langage vm en arguments
+;; parcourt chaque instr du code et les charge dans la pile de code
+;; de la vm (avec transformations sur le code selon les instrs lues)
+(defun load-vm (vm code)
+  (let ((co (get vm :CO))
+	(instr nil)
+	(cell code))
+    (progn
+      (loop while (consp cell) do
+	    (progn
+	      (setf instr (car cell))
+	      (setf cell (cdr cell))
+	      (case (car instr)
+		    ((:CONST :VAR :SET-VAR :SKIP :SKIPNIL :STACK :RTN :HALT)
+		     (progn
+		       (write-code vm co instr)
+		       (setf co (+ co 1))))
+		    (:LABEL (load-label (cadr instr) co vm))
+		    (:CALL (progn
+			     (if (get-defun (cadr instr))
+				 (load-call instr co vm))
+			     (write-code vm co instr)
+			     (setf co (+ co 1))))
+		    (t (error "instr must be one of :CONST :VAR :SET-VAR :SKIP :SKIPNIL :STACK :RTN :HALT :CALL :LABEL")))))
+	    ;; conserve la postion du compteur ordinal a la fin du chargement
+	    ;; pour pouvoir loader du code en plusieurs appels
+	    (set-register vm :CO co))))
+

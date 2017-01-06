@@ -3,8 +3,7 @@
 (defun lisp2li (expr env)
   (let ((fun nil)
 	(args nil)
-	(lsetf nil)
-	(place nil))
+	(lsetf nil))
     
     ;; expr est un atome ;;
     (if (atom expr)
@@ -22,7 +21,7 @@
 	(setf args (rest expr))
 
 	(cond
-	 
+
 	 ;; cas ou expr n'est pas un symbole
 	 ((not (symbolp fun))
 	  ;; cas des lambdas
@@ -41,12 +40,9 @@
 	 ;; si fun est une macro
 	 ((macro-function fun) 
 	  (case fun
-		(setf `(:SET-VAR ,(cdr (lisp2li (first args) env)) ,(lisp2li (second args) env)))
-		(decf (lisp2li `(setf ,(first args) (1- ,(first args))) env))
-		(incf (lisp2li `(setf ,(first args) (1+ ,(first args))) env))
+		(setf `(:SET-VAR ,(cdr (lisp2li (car args) env)) ,(lisp2li (cadr args) env)))
 		(cond (lisp2li (cond2if args) env))
 		(case (lisp2li (case2if (cdr args) (car args)) env))
-		(loop `(:LOOP ,(lisp2li (second args) env) ,(lisp2li (fourth args) env)))
 		(defun
 		    ;; si la fonction contient des vars locales
 		    (if (eq 'let (car (third args))) 
@@ -62,9 +58,7 @@
 				    ,(length (second args)) ;; nombre d'args
 				    ,(+ 1 (length (second args))) ;; nombre d'args + nb lvars + 1
 				    ,(lisp2li (third args) (second args))))))
-		(t (progn
-		     ;;(format t "macro to expand : ~s" expr)
-		     (lisp2li (macroexpand-1 expr) env)))))
+		(t (lisp2li (macroexpand-1 expr) env))))
 
 	 ;; si fun est une forme speciale
 	 ((special-form-p fun) 

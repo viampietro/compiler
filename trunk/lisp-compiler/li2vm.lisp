@@ -1,27 +1,47 @@
 ;; prend une expression LI en arguments ainsi qu'un nombre de params
 ;; retourne une liste d'expressions vm.
 (defun li2vm (expr nbparam)
-  (ecase (car expr)
-	 (:LIT `((:CONST . ,(cdr expr))))
-	 (:VAR `((:VAR . ,(cdr expr))))
-	 (:SET-VAR `(,@(li2vm (caddr expr) nbparam)
-		     (:SET-VAR . ,(cadr expr))))
-	 (:CALL (let ((fun (second expr)) (args (cddr expr)))
-		  `(,@(map-li2vm args nbparam) (:CONST . ,(length args)) (:CALL ,fun))))
-	 (:MCALL (let ((fun (second expr)) (args (cddr expr)))
-		   `(,@(map-li2vm args nbparam) (:CONST . ,(length args)) (:CALL ,fun))))
-	 (:UNKNOWN (let ((nexpr (lisp2li (second expr) (third expr))))
-		     (if (eq (car nexpr) :UNKNOWN)
-			 (error "UNKNOWN ~s" (cdr expr))
-		       (li2vm (displace expr nexpr) (length (third expr))))))
-	 (:IF (let ((bloc-alors (li2vm (third expr) nbparam))
-		    (bloc-sinon (li2vm (fourth expr) nbparam)))
-		`(,@(li2vm (second expr) nbparam)
-		  (:SKIPNIL . ,(+ 1 (length bloc-alors)))
-		  ,@bloc-alors
-		  (:SKIP . ,(length bloc-sinon))
-		  ,@bloc-sinon)))
-	 (:PROGN (map-li2vm (cdr expr) nbparam))))
+  (let ((fun nil)
+	(args nil)
+	(nexpr nil)
+	(bloc-alors nil)
+	(bloc-sinon nil)
+	(loop-body nil)
+	(loop-stop-cond nil))
+    (ecase (car expr)
+	   (:LIT `((:CONST . ,(cdr expr))))
+	   (:VAR `((:VAR . ,(cdr expr))))
+	   (:SET-VAR `(,@(li2vm (caddr expr) nbparam)
+		       (:SET-VAR . ,(cadr expr))))
+	   (:CALL (progn
+		    (setf fun (second expr))
+		    (setf args (cddr expr))
+		    `(,@(map-li2vm args nbparam) (:CONST . ,(length args)) (:CALL ,fun))))
+	   (:MCALL (progn
+		     (setf fun (second expr))
+		     (setf args (cddr expr))
+		     `(,@(map-li2vm args nbparam) (:CONST . ,(length args)) (:CALL ,fun))))
+	   (:UNKNOWN (progn
+		       (setf nexpr (lisp2li (second expr) (third expr)))
+		       (if (eq (car nexpr) :UNKNOWN)
+			   (error "UNKNOWN ~s" (cdr expr))
+			 (li2vm (displace expr nexpr) (length (third expr))))))
+	   (:IF (progn
+		  (setf bloc-alors (li2vm (third expr) nbparam))
+		  (setf bloc-sinon (li2vm (fourth expr) nbparam))
+		  `(,@(li2vm (second expr) nbparam)
+		    (:SKIPNIL . ,(+ 1 (length bloc-alors)))
+		    ,@bloc-alors
+		    (:SKIP . ,(length bloc-sinon))
+		    ,@bloc-sinon)))
+	   (:PROGN (map-li2vm (cdr expr) nbparam))
+	   (:LOOP (progn
+		    (setf loop-stop-cond (li2vm (second expr) nbparam))
+		    (setf loop-body (li2vm (third expr) nbparam))
+		    `(,@loop-stop-cond
+		      (:SKIPNIL . ,(1+ (length loop-body)))
+		      ,@loop-body
+		      (:SKIP . ,(- 0 2 (length loop-body) (length loop-stop-cond)))))))))
 
 (defun fun2vm (fun)
   (let ((fun-value (get-defun fun)))
