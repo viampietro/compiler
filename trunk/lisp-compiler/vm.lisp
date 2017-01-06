@@ -6,7 +6,6 @@
     (set-register vm-name :data-stack (make-array data-stack-size))
     (set-register vm-name :control-stack (make-array control-stack-size))
     (set-register vm-name :CO 0) ;; compteur ordinal du tableau de code
-    (set-register vm-name :EOC 0) ;; end of code, pointeur sur la fin du tableau de code
     (set-register vm-name :DSP 0) ;; pour data stack pointer
     (set-register vm-name :FP 0)  ;; frame pointer de la data-stack
     (set-register vm-name :CSP 0) ;; pour control stack pointer
