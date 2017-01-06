@@ -1,3 +1,0 @@
-;; en premier se mettre dans le dossier tests et lancer clisp
-;; puis charger les fichiers lisp necessaires a la compil et interpretation
-(load "test-utils.lisp")
