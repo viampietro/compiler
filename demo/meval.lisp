@@ -30,27 +30,52 @@
 ;;          MEVAL du meta-evaluateur           ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; pour meta-evaluer le meta-evaluateur, il faut que lisp2li, eval-li et meval
+;; pour meta-evaluer le meta-evaluateur, il faut que lisp2li, eval-li et meval (et toutes les fonctions annexes)
 ;; soient definis en tant que symbole fonctionnel utilisateur.
-;; C'est a dire, on va associer a un symbole lisp2li (respectivement eval-li, meval)
+;; C'est a dire, on va associer a un symbole lisp2li (respectivement eval-li, meval, et annexes)
 ;; un attribut :defun dont la valeur sera de la forme (:LAMBDA <nbargs> <taille env> <corps>)
 
-(meval (load-fun 'lisp2li)) 
+(meval (load-fun 'let2setf))
+(meval (load-fun 'cond2if))
+(meval (load-fun 'case2if))
+(meval (load-fun 'map-lisp2li))
+(meval (load-fun 'lisp2li))
+(meval (load-fun 'map-eval-li))
+(meval (load-fun 'map-eval-li-progn))
+(meval (load-fun 'make-eval-li-env))
 (meval (load-fun 'eval-li))
 (meval (load-fun 'meval))
 
 ;; OU
 
-(meval-interpret)
+(meval-interpret) ;; meval-interpret fait un double appel de toutes les fonctions
 
 ;; a la premiere meta-evaluation de lisp2li (respectivement eval-li, meval)
-;; le appel recursif a lisp2li dans lisp2li seront traduits par des :CALL
+;; l'appel recursif a lisp2li dans lisp2li seront traduits par des :CALL
 ;; car le fonction lisp2li a bien ete definie dans l'interprete lisp natif
 
 ;; pour transformer les :CALL en :MCALL, il faut en fait relancer une evaluation de lisp2li
 ;; (un deuxieme (meval (load-fun 'lisp2li))) qui prendra en compte la premiere meta-definition
 ;; de lisp2li lors du parcours du (defun lisp2li () ...)
-
-(meval (load-fun 'lisp2li)) 
+(meval (load-fun 'let2setf))
+(meval (load-fun 'cond2if))
+(meval (load-fun 'case2if))
+(meval (load-fun 'map-lisp2li))
+(meval (load-fun 'lisp2li))
+(meval (load-fun 'map-eval-li))
+(meval (load-fun 'map-eval-li-progn))
+(meval (load-fun 'make-eval-li-env))
 (meval (load-fun 'eval-li))
 (meval (load-fun 'meval))
+
+
+;; on peut par la suite pratiquer des appels du type :
+
+(meval '(meval '(fact 5)))
+(meval '(meval '(fibo 20)))
+
+;; Attention, on peut faire appel à meval seulement
+;; a deux niveau d'imbrication.
+;; Les lignes suivantes generent une erreur :
+(meval '(meval '(meval '(fibo 20))))
+(meval '(meval '(lisp2li '(fibo 20) '())))

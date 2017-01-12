@@ -1,0 +1,14 @@
+;; associe au symbole name 3 tableaux (code, data-stack, control-stack)
+;; et 3 pseudos registres CO, SP et FP.
+(defun make-vm (vm-name code-size data-stack-size control-stack-size)
+  (progn
+    (set-register vm-name :code (make-array code-size))
+    (set-register vm-name :data-stack (make-array data-stack-size))
+    (set-register vm-name :control-stack (make-array control-stack-size))
+    (set-register vm-name :CO 0) ;; compteur ordinal du tableau de code
+    (set-register vm-name :DSP 0) ;; pour data stack pointer
+    (set-register vm-name :FP 0)  ;; frame pointer de la data-stack
+    (set-register vm-name :CSP 0) ;; pour control stack pointer
+    (set-register vm-name :htfr (make-hash-table :test 'equal)) ;; hash table for forward references
+    (set-register vm-name :htss (make-hash-table :test 'equal)) ;; hash table for solved symbols
+    vm-name))

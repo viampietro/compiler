@@ -1,0 +1,5 @@
+(defun fibo1 (n)
+   (if (<= n 1)	
+       1
+      (+ (fibo2 (- n 1))
+       (fibo2 (- n 2)))))

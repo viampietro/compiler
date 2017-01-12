@@ -1,0 +1,13 @@
+(defun case2if (lexpr key)
+  (let ((next-case (car lexpr)))
+    (if (equal t (car next-case))
+	(cadr next-case)
+      ;; si la clause commence par un atome (ex : (:IF ...))
+      (if (atom (car next-case))
+	  `(if (eql ,key ',(car next-case))
+	       ,@(cdr next-case)
+	     ,(case2if (cdr lexpr) key))
+	;; si la clause est une liste de cles
+	`(if (member ,key ',(car next-case))
+	     ,@(cdr next-case)
+	   ,(case2if (cdr lexpr) key))))))

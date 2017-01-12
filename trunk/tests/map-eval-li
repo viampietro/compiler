@@ -1,0 +1,4 @@
+(defun map-eval-li (lexpr env)
+  (if (atom lexpr)
+      lexpr
+    `(,(eval-li (first lexpr) env) ,@(map-eval-li (rest lexpr) env))))

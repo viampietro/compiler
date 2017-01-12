@@ -1,0 +1,3 @@
+(defun make-eval-li-env (lexpr array-size nb-lvars)
+    (make-array array-size
+		:initial-contents `(nil ,@lexpr ,@(make-list nb-lvars))))

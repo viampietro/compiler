@@ -1,0 +1,12 @@
+(defun reset-vm (vm-name)
+  (progn
+    (set-register vm-name :code (make-array (array-total-size (get vm-name :code))))
+    (set-register vm-name :data-stack (make-array (array-total-size (get vm-name :data-stack))))
+    (set-register get vm-name :control-stack (make-array (array-total-size (get vm-name :control-stack))))
+    (set-register vm-name :CO 0) ;; compteur ordinal du tableau de code
+    (set-register vm-name :DSP 0) ;; pour data stack pointer
+    (set-register vm-name :FP 0)  ;; frame pointer de la data-stack
+    (set-register vm-name :CSP 0) ;; pour control stack pointer
+    (set-register vm-name :htfr (make-hash-table :test 'equal)) ;; hash table for forward references
+    (set-register vm-name :htss (make-hash-table :test 'equal)) ;; hash table for solved symbols
+    vm-name))

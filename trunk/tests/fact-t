@@ -1,0 +1,4 @@
+(defun fact-t (n r)
+       (if (= n 0)
+       	   r
+	 (fact-t (- n 1) (* n r))))

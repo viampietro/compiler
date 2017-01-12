@@ -1,0 +1,12 @@
+(defun let2setf (lexpr)
+  (let ((ret nil)
+	(var nil)
+	(value nil))
+    (if (atom lexpr)
+	lexpr
+      (progn
+	(setf ret (let2setf (cdr lexpr)))
+	(setf var (caar lexpr))
+	(setf value (cadar lexpr))
+	`((,var ,@(car ret))
+	  ((setf ,var ,value) ,@(cadr ret)))))))

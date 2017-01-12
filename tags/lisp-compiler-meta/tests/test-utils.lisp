@@ -39,27 +39,7 @@
 
 (defun meval-interpret ()
   (progn
-    ;; premiere passe genere des :CALL
-    (meval (load-fun 'let2setf))
-    (meval (load-fun 'cond2if))
-    (meval (load-fun 'case2if))
-    (meval (load-fun 'map-lisp2li))
     (meval (load-fun 'lisp2li))
-    (meval (load-fun 'map-eval-li))
-    (meval (load-fun 'map-eval-li-progn))
-    (meval (load-fun 'make-eval-li-env))
-    (meval (load-fun 'eval-li))
-    (meval (load-fun 'meval))
-
-    ;; deuxieme passe genere des :MCALL
-    (meval (load-fun 'let2setf))
-    (meval (load-fun 'cond2if))
-    (meval (load-fun 'case2if))
-    (meval (load-fun 'map-lisp2li))
-    (meval (load-fun 'lisp2li))
-    (meval (load-fun 'map-eval-li))
-    (meval (load-fun 'map-eval-li-progn))
-    (meval (load-fun 'make-eval-li-env))
     (meval (load-fun 'eval-li))
     (meval (load-fun 'meval))))
 

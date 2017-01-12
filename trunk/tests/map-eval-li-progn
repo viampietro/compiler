@@ -1,0 +1,6 @@
+(defun map-eval-li-progn (lexpr env)
+  (if (null (rest lexpr))
+      (eval-li (first lexpr) env)
+    (progn
+      (eval-li (first lexpr) env)
+      (map-eval-li-progn (rest lexpr) env))))

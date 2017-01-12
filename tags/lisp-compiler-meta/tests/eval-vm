@@ -1,0 +1,14 @@
+(defun eval-vm (vm expr)
+  (let ((start-co (get vm :CO)))
+    (if (equal 'defun (car expr))
+	(error "eval-vm ne peut pas s'appliquer sur defun")
+      (progn
+	(if (fboundp 'lisp2li)
+	    (load-vm vm `(,@(li2vm (lisp2li expr '()) (length (cdr expr))) (:HALT)))
+	  (load-vm vm `(,@(li2vm (meval `(lisp2li ,expr '())) (length (cdr expr))) (:HALT))))
+	(exec-vm vm start-co)
+	;; lecture du resultat sur le sommet de la data stack
+	;; et mise a zero du data stack pointer
+	(set-register vm :CO start-co)
+	(read-data-stack vm (set-register vm :DSP (1- (get vm :DSP))))))))
+	

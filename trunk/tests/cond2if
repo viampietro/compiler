@@ -1,0 +1,7 @@
+(defun cond2if (lexpr)
+  (let ((next-cond (car lexpr)))
+    (if (equal t (car next-cond))
+	(cadr next-cond)	 
+      `(if ,(car next-cond)
+	   ,@(cdr next-cond)
+	 ,(cond2if (cdr lexpr))))))
