@@ -79,3 +79,26 @@
 ;; Les lignes suivantes generent une erreur :
 (meval '(meval '(meval '(fibo 20))))
 (meval '(meval '(lisp2li '(fibo 20) '())))
+
+
+;; on peut méta-evaluer le compilateur avec la fonction (meval-compiler)
+;; On appelle compilateur toutes les fonctions de traduction
+;; du langage lisp, li en assembleur (langage vm)
+(meval-compiler)
+
+;; on va alors meta-evaluer li2vm, fun2vm, ...
+;; on peut maintenant appeler ces fonctions de compilation via le meta-evaluateur
+(meval '(mcompile '(fact 5)))
+(meval '(mcompile (load-fun 'fact)))
+
+
+;; On peut méta-evaluer la vm avec la fonction :
+(meval-vm) ;; meta-eval de load-vm, exec-vm, eval-vm, ...
+
+;; puis on peut creer et lancer une vm depuis le meta-evaluateur :
+(meval '(make-vm 'ma-vm 1000 1000 1000)) ;; cree la vm depuis le meta-evaluateur
+(meval '(load-vm 'ma-vm (fun2vm 'fact))) ;; charge fact dans la vm depuis le meta-evaluateur
+
+(meval '(eval-vm 'ma-vm '(fact 5))) ;; evalue (fact 5) dans la vm, evaluation lancee depuis le meta-evaluateur
+;; ATTENTION aux appels gourmants, (meval (eval-vm 'ma-vm '(fibo 11))) fait devorder la pile lisp
+

@@ -1,14 +1,24 @@
 (defun eval-vm (vm expr)
-  (let ((start-co (get vm :CO)))
+  (let ((start-co (get vm :CO))
+	(vm-code nil)
+	(i nil))
     (if (equal 'defun (car expr))
 	(error "eval-vm ne peut pas s'appliquer sur defun")
       (progn
-	(if (fboundp 'lisp2li)
-	    (load-vm vm `(,@(li2vm (lisp2li expr '()) (length (cdr expr))) (:HALT)))
-	  (load-vm vm `(,@(li2vm (meval `(lisp2li ,expr '())) (length (cdr expr))) (:HALT))))
+	(setf vm-code (mcompile expr))
+	(load-vm vm `(,@vm-code (:HALT)))
 	(exec-vm vm start-co)
+
+	;; efface l'appel a load-vm dans la vm
+	(if (not (eql (car expr) 'load-vm))
+	    (set-register vm :CO start-co)
+	  (progn
+	    (setf i start-co)
+	    (loop while (< i (+ start-co (+ 1 (length vm-code)))) do
+		  (progn
+		    (write-code vm i nil)
+		    (setf i (1+ i))))))
+	
 	;; lecture du resultat sur le sommet de la data stack
 	;; et mise a zero du data stack pointer
-	(set-register vm :CO start-co)
 	(read-data-stack vm (set-register vm :DSP (1- (get vm :DSP))))))))
-	

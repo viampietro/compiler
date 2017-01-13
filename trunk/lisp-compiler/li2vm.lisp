@@ -8,7 +8,7 @@
 	(bloc-sinon nil)
 	(loop-body nil)
 	(loop-stop-cond nil))
-    (ecase (car expr)
+    (case (car expr)
 	   (:LIT `((:CONST . ,(cdr expr))))
 	   (:VAR `((:VAR . ,(cdr expr))))
 	   (:SET-VAR `(,@(li2vm (caddr expr) nbparam)
@@ -41,12 +41,13 @@
 		    `(,@loop-stop-cond
 		      (:SKIPNIL . ,(1+ (length loop-body)))
 		      ,@loop-body
-		      (:SKIP . ,(- 0 2 (length loop-body) (length loop-stop-cond)))))))))
+		      (:SKIP . ,(- 0 2 (length loop-body) (length loop-stop-cond))))))
+	   (t (error "~s not a li expression" (car expr))))))
 
 (defun fun2vm (fun)
   (let ((fun-value (get-defun fun)))
     (if (null fun-value)
-	(warn "~s n'a pas de valeur fonctionnelle" fun)
+	(error "~s n'a pas de valeur fonctionnelle" fun)
     ;; on definit une etiquette pour la fonction
       `((:LABEL ,fun)
 	;; nombre de vars locales - nbargs - 1

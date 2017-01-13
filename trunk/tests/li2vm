@@ -1,12 +1,12 @@
-;; prend une expression LI en arguments ainsi qu'un nombre de params
-;; retourne une liste d'expressions vm.
 (defun li2vm (expr nbparam)
   (let ((fun nil)
 	(args nil)
 	(nexpr nil)
 	(bloc-alors nil)
-	(bloc-sinon nil))
-    (ecase (car expr)
+	(bloc-sinon nil)
+	(loop-body nil)
+	(loop-stop-cond nil))
+    (case (car expr)
 	   (:LIT `((:CONST . ,(cdr expr))))
 	   (:VAR `((:VAR . ,(cdr expr))))
 	   (:SET-VAR `(,@(li2vm (caddr expr) nbparam)
@@ -33,4 +33,11 @@
 		    (:SKIP . ,(length bloc-sinon))
 		    ,@bloc-sinon)))
 	   (:PROGN (map-li2vm (cdr expr) nbparam))
-	   (:LOOP ))))
+	   (:LOOP (progn
+		    (setf loop-stop-cond (li2vm (second expr) nbparam))
+		    (setf loop-body (li2vm (third expr) nbparam))
+		    `(,@loop-stop-cond
+		      (:SKIPNIL . ,(1+ (length loop-body)))
+		      ,@loop-body
+		      (:SKIP . ,(- 0 2 (length loop-body) (length loop-stop-cond))))))
+	   (t (error "~s not a li expression" (car expr))))))
