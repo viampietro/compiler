@@ -30,6 +30,8 @@
 	  do (format t "~s " (read-control-stack vm i)))
     (format t "~%")))
 
+;; Retourne le nom de la fonction nouvellement definie
+;; si expr est un defun. Permet d'enchainer l'appel avec fun2vm.
 (defun meval (expr)
   (if (eql (car expr) 'defun)
       (progn
@@ -39,10 +41,66 @@
 
 (defun meval-interpret ()
   (progn
+    ;; premiere passe genere des :CALL
+    (meval (load-fun 'let2setf))
+    (meval (load-fun 'cond2if))
+    (meval (load-fun 'case2if))
+    (meval (load-fun 'map-lisp2li))
     (meval (load-fun 'lisp2li))
+    (meval (load-fun 'map-eval-li))
+    (meval (load-fun 'map-eval-li-progn))
+    (meval (load-fun 'make-eval-li-env))
+    (meval (load-fun 'eval-li))
+    (meval (load-fun 'meval))
+
+    ;; deuxieme passe genere des :MCALL
+    (meval (load-fun 'let2setf))
+    (meval (load-fun 'cond2if))
+    (meval (load-fun 'case2if))
+    (meval (load-fun 'map-lisp2li))
+    (meval (load-fun 'lisp2li))
+    (meval (load-fun 'map-eval-li))
+    (meval (load-fun 'map-eval-li-progn))
+    (meval (load-fun 'make-eval-li-env))
     (meval (load-fun 'eval-li))
     (meval (load-fun 'meval))))
 
+;; Composition de lisp2li et li2vm
+;; ou appel a fun2vm si expr est un defun.
+(defun mcompile (expr)
+  (if (eql (car expr) 'defun)
+      (fun2vm (meval expr)) 
+    (li2vm (lisp2li expr '()) 0)))
+
+(defun meval-compiler ()
+  (progn
+    (meval (load-fun 'li2vm))
+    (meval (load-fun 'fun2vm))
+    (meval (load-fun 'map-li2vm))
+    (meval (load-fun 'mcompile))
+
+    ;; deuxieme passe pour les :MCALL
+    (meval (load-fun 'li2vm))
+    (meval (load-fun 'fun2vm))
+    (meval (load-fun 'map-li2vm))
+    (meval (load-fun 'mcompile))))
+
+(defun meval-vm ()
+  (progn
+    (meval (load-fun 'make-vm))
+    (meval (load-fun 'reset-vm))
+    (meval (load-fun 'load-vm))
+    (meval (load-fun 'exec-vm))
+    (meval (load-fun 'eval-vm))
+
+    ;; deuxieme passe pour les :MCALL
+    (meval (load-fun 'make-vm))
+    (meval (load-fun 'reset-vm))
+    (meval (load-fun 'load-vm))
+    (meval (load-fun 'exec-vm))
+    (meval (load-fun 'eval-vm))))
+
+    
 (defun marque-terminal-li (fun)
   (if (get-defun fun)
       (map-marque-terminal-li (fourth (get-defun fun)))
@@ -57,3 +115,4 @@
 	       (map-marque-terminal-li (fourth expr-li))))
 	(:PROGN (map-marque-terminal-li (nth (- (length (cdr expr-li)) 1) (cdr expr-li))))
 	(t nil)))
+

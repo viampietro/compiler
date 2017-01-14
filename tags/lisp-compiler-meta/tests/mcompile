@@ -1,0 +1,6 @@
+;; Compisition de lisp2li et li2vm
+;; ou appel a fun2vm si expr est un defun.
+(defun mcompile (expr)
+  (if (eql (car expr) 'defun)
+      (fun2vm (meval expr)) 
+    (li2vm (lisp2li expr '()) 0)))

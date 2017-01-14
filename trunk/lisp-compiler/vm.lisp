@@ -129,12 +129,23 @@
 			       ;; saut a l'adresse de la fonction pointee par CALL
 			       (setf co (cadr instr))))))
 
+		  ;; Saut a l'adresse de la fonction pointee par CALL simplement,
+		  ;; pas de commutation de contexte.
+		  ;; On part du principe qu'un CALLT est toujours suivi d'une adresse.
+		  (:CALLT (setf co (cadr instr)))
+		  
 		  ;; on reserve l'espace memoire pour les vars locales en augmentant
 		  ;; le pointeur de pile de la valeur qui suit :STACK
 		  (:STACK (progn
 			    (set-register vm :DSP (+ (get vm :DSP) (cdr instr)))
 			    (incf co)))
-		  
+
+		  ;; appel a :UNSTACK avant un appel terminal (:CALLT)
+		  ;; Place le :DSP au niveau du frame pointer + le nombre qui suit unstack
+		  (:UNSTACK (progn
+			      (set-register vm :DSP (+ (get vm :FP) (cdr instr)))
+			      (incf co)))
+
 		  (:RTN (progn
 			  
 			  ;; on stocke la valeur de retour dns la var return-value
@@ -155,7 +166,7 @@
 			  (setf co (read-control-stack vm (get vm :CSP)))))
 		  
 		  (:HALT (setf not-finished nil))
-		  (t (error "instr must be one of :HALT, :RTN, :STACK, :CALL, :SKIPNIL, :SKIP, :SET-VAR, :VAR, :CONST")))
+		  (t (error "Given ~s, instr must be one of :HALT, :RTN, :STACK, :CALL, :SKIPNIL, :SKIP, :SET-VAR, :VAR, :CONST" (car instr))))
 	    
 	    ;; INSTRUCTIONS DE DEBUG
 	    ;; (format t "DATA STACK : ")
@@ -184,12 +195,12 @@
 	      (setf instr (car cell))
 	      (setf cell (cdr cell))
 	      (case (car instr)
-		    ((:CONST :VAR :SET-VAR :SKIP :SKIPNIL :STACK :RTN :HALT)
+		    ((:UNSTACK :CONST :VAR :SET-VAR :SKIP :SKIPNIL :STACK :RTN :HALT)
 		     (progn
 		       (write-code vm co instr)
 		       (setf co (+ co 1))))
 		    (:LABEL (load-label (cadr instr) co vm))
-		    (:CALL (progn
+		    ((:CALL :CALLT) (progn
 			     (if (get-defun (cadr instr))
 				 (load-call instr co vm))
 			     (write-code vm co instr)

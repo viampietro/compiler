@@ -1,0 +1,4 @@
+(defun fibo-t (n a b)
+  (if (<= n 1)
+      	  (+ a b)
+    	(fibo-t (- n 1) b (+ a b)))))

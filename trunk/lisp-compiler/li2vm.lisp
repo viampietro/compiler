@@ -21,6 +21,10 @@
 		     (setf fun (second expr))
 		     (setf args (cddr expr))
 		     `(,@(map-li2vm args nbparam) (:CONST . ,(length args)) (:CALL ,fun))))
+	   (:MCALLT (progn
+		      (setf fun (second expr))
+		      (setf args (cddr expr))
+		      `(,@(map-li2vm args nbparam) ,@(gen-setvars (length args)) (:UNSTACK . ,(length args)) (:CALLT ,fun))))
 	   (:UNKNOWN (progn
 		       (setf nexpr (lisp2li (second expr) (third expr)))
 		       (if (eq (car nexpr) :UNKNOWN)
@@ -63,4 +67,11 @@
       lexpr
     `(,@(li2vm (first lexpr) nbparam) ,@(map-li2vm (rest lexpr) nbparam))))
 
-
+(defun gen-setvars (nbargs)
+  (let ((lsetvars nil)
+	(i 0))
+    (loop while (< i nbargs) do
+	  (progn
+	    (setf lsetvars `(,@lsetvars (:SET-VAR . ,(- nbargs i))))
+	    (setf i (1+ i))))
+    lsetvars))

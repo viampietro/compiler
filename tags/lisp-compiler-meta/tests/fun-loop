@@ -1,8 +1,0 @@
-(defun fun-loop ()
-  (let ((i nil))
-    (progn
-      (setf i 0)
-      (loop while (< i 10)
-	    do (progn
-		 (setf i (1+ i))
-		 (format t "i = ~s~%" i))))))

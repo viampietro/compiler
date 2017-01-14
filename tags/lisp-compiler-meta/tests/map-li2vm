@@ -1,0 +1,4 @@
+(defun map-li2vm (lexpr nbparam)
+  (if (atom lexpr)
+      lexpr
+    `(,@(li2vm (first lexpr) nbparam) ,@(map-li2vm (rest lexpr) nbparam))))

@@ -32,7 +32,10 @@
 
 	 ;; Cas des fonctions creer
 	 ((get-defun fun)
-	  `(:MCALL ,fun ,@(map-lisp2li args env))) 
+	  ;; verifs sur le nombre d'arguments
+	  (if (= (length args) (second (get-defun fun)))
+	      `(:MCALL ,fun ,@(map-lisp2li args env))
+	    (warn "Mauvais nombre d'arguments pour la fonction ~s. Reçu ~s, attendu ~s" fun (length args) (second (get-defun fun)))))
 
 	 ;; si fun n'a pas de valeur fonctionnelle
 	 ((not (fboundp fun)) 
@@ -56,7 +59,7 @@
 				  (:LIT :LAMBDA
 					,(length (second args)) ;; nombre d'args
 					,(+ 1 (length (second args)) (length (car lsetf))) ;; nombre d'args + nb lvars + 1
-					,(lisp2li `(progn ,@(cadr lsetf) ,(caddr (third args))) `(,@(second args) . ,(car lsetf))))))
+					,(lisp2li `(progn ,@(cadr lsetf) ,@(cddr (third args))) `(,@(second args) . ,(car lsetf))))))
 		      `(:CALL set-defun (:LIT . ,(first args))
 			      (:LIT :LAMBDA
 				    ,(length (second args)) ;; nombre d'args

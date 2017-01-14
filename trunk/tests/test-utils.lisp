@@ -101,18 +101,17 @@
     (meval (load-fun 'eval-vm))))
 
     
-(defun marque-terminal-li (fun)
+(defun marque-terminal (fun)
   (if (get-defun fun)
-      (map-marque-terminal-li (fourth (get-defun fun)))
+      (marque-terminal-li (fourth (get-defun fun)))
     (error "le symbole ~s n'existe pas" fun)))
 
-(defun map-marque-terminal-li (expr-li)
+(defun marque-terminal-li (expr-li)
   (case (car expr-li)
 	(:MCALL (setf (car expr-li) :MCALLT))
-	(:CALL (setf (car expr-li) :CALLT))
 	(:IF (progn
-	       (map-marque-terminal-li (third expr-li))
-	       (map-marque-terminal-li (fourth expr-li))))
-	(:PROGN (map-marque-terminal-li (nth (- (length (cdr expr-li)) 1) (cdr expr-li))))
+	       (marque-terminal-li (third expr-li))
+	       (marque-terminal-li (fourth expr-li))))
+	(:PROGN (marque-terminal-li (nth (- (length (cdr expr-li)) 1) (cdr expr-li))))
 	(t nil)))
 

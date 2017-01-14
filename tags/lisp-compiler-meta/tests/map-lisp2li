@@ -1,0 +1,4 @@
+(defun map-lisp2li (lexpr env)
+  (if (atom lexpr)
+      ()
+    `(,(lisp2li (first lexpr) env) ,@(map-lisp2li (rest lexpr) env))))
